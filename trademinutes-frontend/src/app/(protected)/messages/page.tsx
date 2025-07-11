@@ -125,17 +125,21 @@ export default function MessagesPage() {
 
     const fetchMessages = async () => {
       try {
+        console.log("Fetching messages for conversation:", selectedConv);
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_MESSAGING_API_URL || 'http://localhost:8085'}/api/conversations/${selectedConv}/messages`
         );
         if (response.ok) {
           const data = await response.json();
+          console.log("Fetched messages:", data);
           // Mark messages as sent by current user
           const messagesWithOwnership = data.map((msg: Message) => ({
             ...msg,
             isMe: msg.senderId === currentUser?.email
           }));
           setMessages(messagesWithOwnership);
+        } else {
+          console.error("Failed to fetch messages:", response.status, response.statusText);
         }
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -143,7 +147,7 @@ export default function MessagesPage() {
     };
 
     fetchMessages();
-  }, [selectedConv, currentUser?.id]);
+  }, [selectedConv, currentUser?.email]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -301,7 +305,13 @@ export default function MessagesPage() {
     }
   };
 
-  const selectedConversation = (conversations || []).find(conv => conv.id === selectedConv);
+  const selectedConversation = (conversations || []).find(conv => {
+    const convId = typeof conv.id === 'string' ? conv.id : 
+                  (conv.id && typeof conv.id === 'object' && 'oid' in conv.id) ? (conv.id as any).oid :
+                  (conv.id && typeof conv.id === 'object' && '$oid' in conv.id) ? (conv.id as any).$oid :
+                  String(conv.id || '');
+    return convId === selectedConv;
+  });
 
   return (
     <ProtectedLayout>
@@ -352,12 +362,19 @@ export default function MessagesPage() {
                   No conversations yet
                 </div>
               ) : (
-                conversations.map((conv) => (
-                  <li
-                    key={conv.id}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors group ${selectedConv === conv.id ? "bg-emerald-100" : "hover:bg-gray-100"}`}
-                    onClick={() => setSelectedConv(conv.id)}
-                  >
+                conversations.map((conv) => {
+                  // Handle both string and ObjectID formats
+                  const convId = typeof conv.id === 'string' ? conv.id : 
+                                (conv.id && typeof conv.id === 'object' && 'oid' in conv.id) ? (conv.id as any).oid :
+                                (conv.id && typeof conv.id === 'object' && '$oid' in conv.id) ? (conv.id as any).$oid :
+                                String(conv.id || '');
+                  
+                  return (
+                    <li
+                      key={convId}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors group ${selectedConv === convId ? "bg-emerald-100" : "hover:bg-gray-100"}`}
+                      onClick={() => setSelectedConv(convId)}
+                    >
                     <img
                       src={conv.avatar?.trim() ? conv.avatar : "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                       className="w-9 h-9 rounded-full object-cover border"
@@ -369,14 +386,15 @@ export default function MessagesPage() {
                         {conv.lastMessage ? conv.lastMessage.content : "No messages yet"}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[10px] text-gray-400">
-                        {conv.lastMessage ? new Date(conv.lastMessage.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""}
-                      </span>
-                    </div>
-                  </li>
-                ))
-              )}
+                                          <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] text-gray-400">
+                          {conv.lastMessage ? new Date(conv.lastMessage.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })
+                )}
             </ul>
           </div>
         </aside>
