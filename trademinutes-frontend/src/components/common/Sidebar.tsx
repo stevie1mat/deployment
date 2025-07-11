@@ -196,16 +196,16 @@ export default function Sidebar() {
             icon={<MdTask size={22} />}
           />
           <SidebarButton
-            href="/messages"
-            label="Messages"
-            pathname={pathname}
-            icon={<MdMessage size={22} />}
-          />
-          <SidebarButton
             href="/appointments"
             label="My Appointments"
             pathname={pathname}
             icon={<FaRegCalendarAlt size={20} />}
+          />
+          <SidebarButton
+            href="/messages"
+            label="Messages"
+            pathname={pathname}
+            icon={<MdMessage size={22} />}
           />
           <SidebarButton
             href="/profile"

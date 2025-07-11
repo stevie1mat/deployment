@@ -34,7 +34,7 @@ export default function UserProfileSummaryPage() {
     const fetchProfile = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_API_URL}/api/auth/profile`,
+          `${process.env.NEXT_PUBLIC_PROFILE_API_URL}/api/profile/get`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
